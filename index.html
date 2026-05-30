@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Method to the Madness — Kenmore, Brisbane</title>
+  <title>Method to the Madness — Cafe in Kenmore, Brisbane</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600;1,700&family=IM+Fell+English:ital@0;1&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=IM+Fell+English:ital@1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <!-- NAV -->
   <nav class="nav" id="nav">
-    <a href="#hero" class="logo-badge" aria-label="Method to the Madness home">
-      <img src="Method-to-the-Madness-Logo.png" alt="Method to the Madness logo" class="logo-img">
+    <a href="#hero" class="nav-logo">
+      <img src="Method-to-the-Madness-Logo.png" alt="Method to the Madness">
     </a>
     <ul class="nav-links">
-      <li><a href="#story">The Story</a></li>
-      <li><a href="#menu">The Menu</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#menu">Menu</a></li>
       <li><a href="#gallery">Gallery</a></li>
       <li><a href="#visit">Find Us</a></li>
     </ul>
@@ -27,238 +27,231 @@
 
   <!-- HERO -->
   <section class="hero" id="hero">
-    <div class="hero-glow"></div>
-    <div class="hero-watermark" aria-hidden="true">W</div>
-    <div class="hero-content">
-      <p class="hero-eyebrow">Kenmore &bull; Brisbane &bull; 3/9 Marshall Lane</p>
-      <h1 class="hero-title">
-        <em>Method</em>
-        <span class="hero-to">to the</span>
-        <em>Madness</em>
+    <div class="hero-text">
+      <p class="hero-eyebrow">Kenmore, Brisbane</p>
+      <h1 class="hero-heading">
+        Kenmore's<br>
+        <em>favourite</em><br>
+        café.
       </h1>
-      <div class="ornament" aria-hidden="true">
-        <span class="orn-line"></span>
-        <span class="orn-glyph">&#10070;</span>
-        <span class="orn-line"></span>
+      <p class="hero-sub">All-day breakfast, specialty coffee, and a menu that refuses to stay in its lane.</p>
+      <div class="hero-actions">
+        <a href="#menu" class="btn btn-dark">See the menu</a>
+        <a href="#visit" class="btn btn-outline-dark">Find us</a>
       </div>
-      <p class="hero-quote">&ldquo;Though this be madness, yet there is method in&rsquo;t.&rdquo;</p>
-      <p class="hero-attr">&mdash; Hamlet, Act II &middot; Scene II</p>
-      <div class="hero-ctas">
-        <a href="#menu" class="btn btn-parchment">The Menu</a>
-        <a href="#visit" class="btn btn-ghost">Find Our Stage</a>
-      </div>
+      <p class="hero-quote"><em>"Though this be madness, yet there is method in't."</em></p>
     </div>
-    <div class="hero-scroll" aria-hidden="true">
-      <span class="scroll-label">Scroll</span>
-      <span class="scroll-line"></span>
+    <div class="hero-image">
+      <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&q=85" alt="Specialty coffee at Method to the Madness" loading="eager">
+      <div class="hero-badge">
+        <span class="badge-line">Open</span>
+        <span class="badge-time">7AM – 2PM</span>
+        <span class="badge-line">Daily</span>
+      </div>
     </div>
   </section>
 
-  <!-- TICKER -->
-  <div class="ticker" aria-hidden="true">
-    <div class="ticker-track">
-      <span>All Day Breakfast</span><span class="sep">&#10022;</span>
-      <span>Boozy Brunch Cocktails</span><span class="sep">&#10022;</span>
-      <span>Specialty Coffee</span><span class="sep">&#10022;</span>
-      <span>Open 7AM &ndash; 2PM</span><span class="sep">&#10022;</span>
-      <span>Kenmore QLD 4069</span><span class="sep">&#10022;</span>
-      <span>Est. 2019</span><span class="sep">&#10022;</span>
-      <span>Comedies &amp; Tragedies of the Palate</span><span class="sep">&#10022;</span>
-      <span>All Day Breakfast</span><span class="sep">&#10022;</span>
-      <span>Boozy Brunch Cocktails</span><span class="sep">&#10022;</span>
-      <span>Specialty Coffee</span><span class="sep">&#10022;</span>
-      <span>Open 7AM &ndash; 2PM</span><span class="sep">&#10022;</span>
-      <span>Kenmore QLD 4069</span><span class="sep">&#10022;</span>
-      <span>Est. 2019</span><span class="sep">&#10022;</span>
-      <span>Comedies &amp; Tragedies of the Palate</span><span class="sep">&#10022;</span>
+  <!-- INFO STRIP -->
+  <div class="info-strip">
+    <div class="info-strip-inner">
+      <div class="info-item">
+        <span class="info-icon">&#9679;</span>
+        <span>3/9 Marshall Lane, Kenmore QLD 4069</span>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-item">
+        <span class="info-icon">&#9679;</span>
+        <span>Mon – Sat &nbsp;7AM – 2PM</span>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-item">
+        <span class="info-icon">&#9679;</span>
+        <a href="tel:0737063793">(07) 3706 3793</a>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-item">
+        <span class="info-icon">&#9679;</span>
+        <span>Walk-ins welcome</span>
+      </div>
     </div>
   </div>
 
-  <!-- THE STORY -->
-  <section class="story" id="story">
-    <div class="story-inner">
-      <div class="story-left">
-        <div class="pull-quote-block">
-          <div class="pull-q-mark">&ldquo;</div>
-          <blockquote class="pull-quote">
-            If coffee be the food of love, play on &mdash; give me excess of it.
-          </blockquote>
-          <cite class="pull-cite">&mdash; The Method, Act I</cite>
-        </div>
-        <div class="owners-photo">
-          <img src="Reagan-Urvik-1.jpg" alt="Reagan and Urvik, owners of Method to the Madness" loading="lazy">
-          <div class="photo-caption">Reagan &amp; Urvik &mdash; Kenmore, QLD</div>
-        </div>
+  <!-- ABOUT -->
+  <section class="about" id="about">
+    <div class="about-inner">
+      <div class="about-photo">
+        <img src="Reagan-Urvik-1.jpg" alt="Reagan and Urvik, the owners of Method to the Madness" loading="lazy">
       </div>
-      <div class="story-right">
-        <div class="section-eyebrow">Act I &middot; The Story</div>
-        <h2 class="story-heading">A Stage<br><em>Like No Other.</em></h2>
-        <div class="ornament" aria-hidden="true">
-          <span class="orn-line"></span>
-          <span class="orn-glyph">&#10070;</span>
-          <span class="orn-line"></span>
+      <div class="about-text">
+        <p class="section-label">Our Story</p>
+        <h2 class="about-heading">A little bit of Melbourne<br>in the heart of Kenmore.</h2>
+        <p class="about-body">Owned by Reagan Nongkhlaw and Urvik Bhalani, Method to the Madness was born from a love of great food, great coffee, and the kind of welcome that makes you feel like a regular — even on your first visit.</p>
+        <p class="about-body">Inspired by Shakespeare and shaped by Melbourne, we've built a light-filled laneway cafe where the menu is as creative as the quotes on the walls. Come for the hotcakes, stay for the brisket burger.</p>
+        <div class="about-stats">
+          <div class="stat">
+            <span class="stat-num">Est.</span>
+            <span class="stat-label">2019</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-num">All-day</span>
+            <span class="stat-label">Breakfast</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-num">Top-notch</span>
+            <span class="stat-label">Coffee</span>
+          </div>
         </div>
-        <p class="story-body">Tucked down Marshall Lane in Kenmore, Method to the Madness is Brisbane&rsquo;s most literary café. The name is Shakespeare. The soul is Melbourne laneway. The food is world-class.</p>
-        <p class="story-body">Reagan Nongkhlaw and Urvik Bhalani built a space where the Bard&rsquo;s best lines share walls with Brisbane&rsquo;s best brunch &mdash; Shakespearean quotes, a shelf of his works, and a light-filled laneway that feels like a stage set.</p>
-        <p class="story-body">From <em>Breakfast Tacos</em> to <em>Beef Brisket Burgers</em>, from boozy brunch cocktails to a menu that shifts with the seasons &mdash; every plate is, as Will himself would say, a thing of beauty most rare.</p>
-        <a href="#menu" class="btn btn-burgundy">Read the Programme &rarr;</a>
       </div>
     </div>
   </section>
 
-  <!-- THE PROGRAMME (MENU) -->
+  <!-- MENU -->
   <section class="menu-section" id="menu">
+    <div class="menu-inner">
+      <div class="menu-header">
+        <p class="section-label">What We're Serving</p>
+        <h2 class="menu-heading">The Menu</h2>
+        <p class="menu-sub">All-day breakfast from 7AM &nbsp;&middot;&nbsp; Lunch from 10AM &nbsp;&middot;&nbsp; Last orders 2PM</p>
+      </div>
 
-    <div class="programme-cover">
-      <div class="section-eyebrow section-eyebrow--parchment">Act II &middot; The Programme</div>
-      <h2 class="programme-heading">Today&rsquo;s<br><em>Bill of Fare</em></h2>
-      <div class="ornament ornament--parchment" aria-hidden="true">
-        <span class="orn-line"></span>
-        <span class="orn-glyph">&#10070;</span>
-        <span class="orn-line"></span>
-      </div>
-      <p class="programme-hours">All-day breakfast from 7AM &middot; Luncheon from 10AM &middot; Curtain falls at 2PM</p>
-    </div>
-
-    <!-- SCENE I: BREAKFAST -->
-    <div class="scene">
-      <div class="scene-header">
-        <span class="scene-num">Scene I</span>
-        <h3 class="scene-title">All Day Breakfast</h3>
-        <span class="scene-rule"></span>
-      </div>
-      <div class="entries">
-        <article class="entry fade-in">
-          <div class="entry-img">
-            <img src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?ixlib=rb-4.0.3&auto=format&fit=crop&w=560&q=80" alt="Strawberry & Matcha Hotcakes" loading="lazy">
-          </div>
-          <div class="entry-body">
-            <span class="entry-tag">Iconic</span>
-            <h4 class="entry-name">Strawberry &amp; Matcha Hotcakes</h4>
-            <p class="entry-desc">Japanese-inspired stacked hotcakes with fresh strawberries and matcha cream &mdash; sweet as a sonnet.</p>
-          </div>
-        </article>
-        <article class="entry fade-in">
-          <div class="entry-img">
-            <img src="https://images.unsplash.com/photo-1482049016688-2d3e1b311543?ixlib=rb-4.0.3&auto=format&fit=crop&w=560&q=80" alt="Chili Scrambled Eggs" loading="lazy">
-          </div>
-          <div class="entry-body">
-            <span class="entry-tag entry-tag--wine">Fiery</span>
-            <h4 class="entry-name">Chili Scrambled Eggs</h4>
-            <p class="entry-desc">Soft scrambled eggs with chili oil, fresh herbs, and crusty sourdough. A tragedy of flavour.</p>
-          </div>
-        </article>
-        <article class="entry fade-in">
-          <div class="entry-img">
-            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=560&q=80" alt="Breakfast Tacos" loading="lazy">
-          </div>
-          <div class="entry-body">
-            <span class="entry-tag entry-tag--moss">Fan Favourite</span>
-            <h4 class="entry-name">Breakfast Tacos</h4>
-            <p class="entry-desc">Soft tacos loaded with breakfast fillings, house salsa, and crema. &ldquo;To eat, or not to eat&rdquo; is no question here.</p>
-          </div>
-        </article>
-        <article class="entry fade-in">
-          <div class="entry-img">
-            <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&auto=format&fit=crop&w=560&q=80" alt="Pumpkin & Halloumi Fritters" loading="lazy">
-          </div>
-          <div class="entry-body">
-            <h4 class="entry-name">Pumpkin &amp; Halloumi Fritters</h4>
-            <p class="entry-desc">Golden fritters with charred halloumi, roasted pumpkin, and herbed yogurt &mdash; a comedy of textures.</p>
-          </div>
-        </article>
-        <article class="entry fade-in">
-          <div class="entry-img">
-            <img src="https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?ixlib=rb-4.0.3&auto=format&fit=crop&w=560&q=80" alt="Mumbai Omelette" loading="lazy">
-          </div>
-          <div class="entry-body">
-            <h4 class="entry-name">Mumbai Omelette</h4>
-            <p class="entry-desc">Spiced Indian-style omelette with masala filling and house chutney. East meets West End.</p>
-          </div>
-        </article>
-        <article class="entry fade-in">
-          <div class="entry-img">
-            <img src="https://images.unsplash.com/photo-1565299585323-38d6b0865b47?ixlib=rb-4.0.3&auto=format&fit=crop&w=560&q=80" alt="Fig & Apple Bircher" loading="lazy">
-          </div>
-          <div class="entry-body">
-            <h4 class="entry-name">Fig &amp; Apple Bircher</h4>
-            <p class="entry-desc">Overnight oats with fresh fig, crisp apple, toasted nuts, and honey. As quiet as a soliloquy.</p>
-          </div>
-        </article>
-      </div>
-    </div>
-
-    <!-- SCENE II: LUNCH -->
-    <div class="scene scene--dark">
-      <div class="scene-header">
-        <span class="scene-num">Scene II</span>
-        <h3 class="scene-title">Luncheon <em class="scene-note">from 10AM</em></h3>
-        <span class="scene-rule"></span>
-      </div>
-      <div class="entries">
-        <article class="entry fade-in">
-          <div class="entry-img">
-            <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-4.0.3&auto=format&fit=crop&w=560&q=80" alt="Beef Brisket Burger" loading="lazy">
-          </div>
-          <div class="entry-body">
-            <span class="entry-tag">Legendary</span>
-            <h4 class="entry-name">Beef Brisket Burger</h4>
-            <p class="entry-desc">Slow-cooked brisket, house pickles, slaw, and smoked aioli on a brioche bun. Worth every act of waiting.</p>
-          </div>
-        </article>
-        <article class="entry fade-in">
-          <div class="entry-img">
-            <img src="https://images.unsplash.com/photo-1544025162-d76694265947?ixlib=rb-4.0.3&auto=format&fit=crop&w=560&q=80" alt="Middle Eastern Pulled Lamb" loading="lazy">
-          </div>
-          <div class="entry-body">
-            <span class="entry-tag entry-tag--wine">Bold</span>
-            <h4 class="entry-name">Middle Eastern Pulled Lamb</h4>
-            <p class="entry-desc">Fragrant slow-pulled lamb with tahini, pomegranate, and warm flatbread. A thousand nights in one dish.</p>
-          </div>
-        </article>
-        <article class="entry fade-in">
-          <div class="entry-img">
-            <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=560&q=80" alt="Samosa Chaat" loading="lazy">
-          </div>
-          <div class="entry-body">
-            <h4 class="entry-name">Samosa Chaat</h4>
-            <p class="entry-desc">Crispy samosas on spiced chickpeas with tamarind, yogurt, and coriander. A comedy of cultures.</p>
-          </div>
-        </article>
-        <article class="entry fade-in">
-          <div class="entry-img">
-            <img src="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?ixlib=rb-4.0.3&auto=format&fit=crop&w=560&q=80" alt="Marinara Linguine" loading="lazy">
-          </div>
-          <div class="entry-body">
-            <h4 class="entry-name">Marinara Linguine</h4>
-            <p class="entry-desc">Fresh seafood in a rich tomato sauce with linguine, chili, and parsley. &ldquo;What&rsquo;s in a name? That which we call a prawn&hellip;&rdquo;</p>
-          </div>
-        </article>
-      </div>
-    </div>
-
-    <!-- SCENE III: ELIXIRS -->
-    <div class="scene scene--elixirs">
-      <div class="scene-header">
-        <span class="scene-num">Scene III</span>
-        <h3 class="scene-title">Elixirs &amp; Libations</h3>
-        <span class="scene-rule"></span>
-      </div>
-      <div class="elixirs">
-        <div class="elixir fade-in">
-          <div class="elixir-glyph">&#9749;</div>
-          <h4 class="elixir-name">Specialty Coffee</h4>
-          <p class="elixir-desc">Will&rsquo;s true elixir of life. Sourced, roasted, and pulled to the highest standard.</p>
+      <!-- BREAKFAST -->
+      <div class="menu-group">
+        <h3 class="menu-group-title">All Day Breakfast</h3>
+        <div class="card-grid">
+          <article class="card fade-in">
+            <div class="card-img">
+              <img src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Strawberry & Matcha Hotcakes" loading="lazy">
+              <span class="card-tag">Iconic</span>
+            </div>
+            <div class="card-body">
+              <h4 class="card-name">Strawberry &amp; Matcha Hotcakes</h4>
+              <p class="card-desc">Stacked Japanese-inspired hotcakes with fresh strawberries and matcha cream.</p>
+            </div>
+          </article>
+          <article class="card fade-in">
+            <div class="card-img">
+              <img src="https://images.unsplash.com/photo-1482049016688-2d3e1b311543?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Chili Scrambled Eggs" loading="lazy">
+              <span class="card-tag card-tag--spice">Fiery</span>
+            </div>
+            <div class="card-body">
+              <h4 class="card-name">Chili Scrambled Eggs</h4>
+              <p class="card-desc">Soft scrambled eggs with chili oil, fresh herbs, and crusty sourdough.</p>
+            </div>
+          </article>
+          <article class="card fade-in">
+            <div class="card-img">
+              <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Breakfast Tacos" loading="lazy">
+              <span class="card-tag">Fan Favourite</span>
+            </div>
+            <div class="card-body">
+              <h4 class="card-name">Breakfast Tacos</h4>
+              <p class="card-desc">Soft tacos loaded with breakfast fillings, house salsa, and crema.</p>
+            </div>
+          </article>
+          <article class="card fade-in">
+            <div class="card-img">
+              <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Pumpkin & Halloumi Fritters" loading="lazy">
+            </div>
+            <div class="card-body">
+              <h4 class="card-name">Pumpkin &amp; Halloumi Fritters</h4>
+              <p class="card-desc">Golden fritters with charred halloumi, roasted pumpkin, and herbed yogurt.</p>
+            </div>
+          </article>
+          <article class="card fade-in">
+            <div class="card-img">
+              <img src="https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Mumbai Omelette" loading="lazy">
+            </div>
+            <div class="card-body">
+              <h4 class="card-name">Mumbai Omelette</h4>
+              <p class="card-desc">Spiced Indian-style omelette with masala filling and house chutney.</p>
+            </div>
+          </article>
+          <article class="card fade-in">
+            <div class="card-img">
+              <img src="https://images.unsplash.com/photo-1565299585323-38d6b0865b47?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Fig & Apple Bircher" loading="lazy">
+            </div>
+            <div class="card-body">
+              <h4 class="card-name">Fig &amp; Apple Bircher</h4>
+              <p class="card-desc">Overnight oats with fresh fig, apple, toasted nuts, and honey.</p>
+            </div>
+          </article>
         </div>
-        <div class="elixir fade-in">
-          <div class="elixir-glyph">&#127863;</div>
-          <h4 class="elixir-name">Boozy Brunch Cocktails</h4>
-          <p class="elixir-desc">&ldquo;If music be the food of love, play on.&rdquo; We interpret this very liberally.</p>
+      </div>
+
+      <!-- LUNCH -->
+      <div class="menu-group">
+        <h3 class="menu-group-title">Lunch <span class="menu-group-note">from 10AM</span></h3>
+        <div class="card-grid">
+          <article class="card fade-in">
+            <div class="card-img">
+              <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Beef Brisket Burger" loading="lazy">
+              <span class="card-tag">Legendary</span>
+            </div>
+            <div class="card-body">
+              <h4 class="card-name">Beef Brisket Burger</h4>
+              <p class="card-desc">Slow-cooked brisket, house pickles, slaw, and smoked aioli on a brioche bun.</p>
+            </div>
+          </article>
+          <article class="card fade-in">
+            <div class="card-img">
+              <img src="https://images.unsplash.com/photo-1544025162-d76694265947?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Middle Eastern Pulled Lamb" loading="lazy">
+            </div>
+            <div class="card-body">
+              <h4 class="card-name">Middle Eastern Pulled Lamb</h4>
+              <p class="card-desc">Slow-pulled lamb with tahini, pomegranate, and warm flatbread.</p>
+            </div>
+          </article>
+          <article class="card fade-in">
+            <div class="card-img">
+              <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Samosa Chaat" loading="lazy">
+            </div>
+            <div class="card-body">
+              <h4 class="card-name">Samosa Chaat</h4>
+              <p class="card-desc">Crispy samosas on spiced chickpeas with tamarind, yogurt, and coriander.</p>
+            </div>
+          </article>
+          <article class="card fade-in">
+            <div class="card-img">
+              <img src="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Marinara Linguine" loading="lazy">
+            </div>
+            <div class="card-body">
+              <h4 class="card-name">Marinara Linguine</h4>
+              <p class="card-desc">Fresh seafood in a rich tomato sauce with linguine, chili, and parsley.</p>
+            </div>
+          </article>
         </div>
-        <div class="elixir fade-in">
-          <div class="elixir-glyph">&#127864;</div>
-          <h4 class="elixir-name">Juices &amp; Smoothies</h4>
-          <p class="elixir-desc">Cold pressed, house blended. For those who prefer elixirs without consequence.</p>
+      </div>
+
+      <!-- DRINKS -->
+      <div class="drinks-row">
+        <div class="drink-block fade-in">
+          <div class="drink-img">
+            <img src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" alt="Specialty coffee" loading="lazy">
+          </div>
+          <div class="drink-text">
+            <h4>Specialty Coffee</h4>
+            <p>Sourced, roasted, and pulled to perfection. Will's true elixir of life.</p>
+          </div>
+        </div>
+        <div class="drink-block fade-in">
+          <div class="drink-img">
+            <img src="https://images.unsplash.com/photo-1560512823-829485b8bf24?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" alt="Cocktails" loading="lazy">
+          </div>
+          <div class="drink-text">
+            <h4>Boozy Brunch Cocktails</h4>
+            <p>Because sometimes 9AM calls for it. We support your lifestyle.</p>
+          </div>
+        </div>
+        <div class="drink-block fade-in">
+          <div class="drink-img">
+            <img src="https://images.unsplash.com/photo-1622597467836-f3285f2131b8?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" alt="Fresh juice" loading="lazy">
+          </div>
+          <div class="drink-text">
+            <h4>Juices &amp; Smoothies</h4>
+            <p>Cold pressed and house blended. For the responsible ones at the table.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -267,73 +260,64 @@
   <!-- GALLERY -->
   <section class="gallery" id="gallery">
     <div class="gallery-inner">
-      <div class="section-eyebrow section-eyebrow--parchment">Act III &middot; The Gallery</div>
-      <h2 class="gallery-heading">Every Plate,<br><em>a Thing of Beauty</em></h2>
-      <p class="gallery-handle">@methodtothemadnesscafe</p>
+      <div class="gallery-header">
+        <p class="section-label section-label--light">@methodtothemadnesscafe</p>
+        <h2 class="gallery-heading">Follow our story</h2>
+      </div>
       <div class="gallery-grid">
         <figure class="gframe fade-in">
-          <img src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" alt="Latte art" loading="lazy">
-          <figcaption>Will&rsquo;s Elixir</figcaption>
+          <img src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" alt="Coffee" loading="lazy">
         </figure>
         <figure class="gframe gframe--tall fade-in">
           <img src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" alt="Hotcakes" loading="lazy">
-          <figcaption>A Thing Most Sweet</figcaption>
         </figure>
         <figure class="gframe fade-in">
-          <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" alt="Brisket Burger" loading="lazy">
-          <figcaption>The Brisket Saga</figcaption>
+          <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" alt="Burger" loading="lazy">
         </figure>
         <figure class="gframe fade-in">
-          <img src="https://images.unsplash.com/photo-1444418776041-9c7e33cc5a9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" alt="Cafe interior" loading="lazy">
-          <figcaption>The Stage</figcaption>
+          <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" alt="Food" loading="lazy">
         </figure>
         <figure class="gframe gframe--tall fade-in">
-          <img src="https://images.unsplash.com/photo-1482049016688-2d3e1b311543?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" alt="Eggs dish" loading="lazy">
-          <figcaption>A Scrambled Soliloquy</figcaption>
+          <img src="https://images.unsplash.com/photo-1482049016688-2d3e1b311543?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" alt="Eggs" loading="lazy">
         </figure>
         <figure class="gframe fade-in">
-          <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" alt="Fresh bowl" loading="lazy">
-          <figcaption>Green as the Envy</figcaption>
+          <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" alt="Bowl" loading="lazy">
         </figure>
       </div>
       <div class="gallery-cta">
-        <a href="https://www.instagram.com/methodtothemadnesscafe/" target="_blank" rel="noopener noreferrer" class="btn btn-ghost-gold">Follow the Story &rarr;</a>
+        <a href="https://www.instagram.com/methodtothemadnesscafe/" target="_blank" rel="noopener noreferrer" class="btn btn-outline-light">View on Instagram</a>
       </div>
     </div>
   </section>
 
-  <!-- FIND US / PLAYBILL -->
+  <!-- VISIT -->
   <section class="visit" id="visit">
     <div class="visit-inner">
-      <div class="playbill">
-        <p class="playbill-theatre">The Kenmore Theatre of Fine Dining</p>
-        <p class="playbill-presents">— PRESENTS —</p>
-        <h2 class="playbill-title"><em>Method to the Madness</em></h2>
-        <p class="playbill-sub">A Shakespearean Café Experience</p>
-        <div class="ornament ornament--gold" aria-hidden="true">
-          <span class="orn-line"></span>
-          <span class="orn-glyph">&#10022;</span>
-          <span class="orn-line"></span>
-        </div>
-        <dl class="playbill-details">
-          <div class="pb-row">
-            <dt>Stage</dt>
-            <dd>3/9 Marshall Lane, Kenmore QLD 4069</dd>
+      <div class="visit-info">
+        <p class="section-label">Come and see us</p>
+        <h2 class="visit-heading">Find Us</h2>
+        <dl class="visit-details">
+          <div class="visit-row">
+            <dt>Address</dt>
+            <dd>3/9 Marshall Lane<br>Kenmore QLD 4069</dd>
           </div>
-          <div class="pb-row">
-            <dt>Performances</dt>
-            <dd>Monday &ndash; Saturday: 7AM &ndash; 2PM</dd>
+          <div class="visit-row">
+            <dt>Hours</dt>
+            <dd>Monday – Saturday<br>7:00AM – 2:00PM</dd>
           </div>
-          <div class="pb-row">
-            <dt>Box Office</dt>
+          <div class="visit-row">
+            <dt>Phone</dt>
             <dd><a href="tel:0737063793">(07) 3706 3793</a></dd>
           </div>
-          <div class="pb-row">
-            <dt>Arrival</dt>
-            <dd>Street parking available on Moggill Road</dd>
+          <div class="visit-row">
+            <dt>Parking</dt>
+            <dd>Street parking on Moggill Road</dd>
           </div>
         </dl>
-        <a href="tel:0737063793" class="btn btn-parchment">Call the Box Office</a>
+        <div class="visit-social">
+          <a href="https://www.instagram.com/methodtothemadnesscafe/" target="_blank" rel="noopener noreferrer" class="social-link">Instagram</a>
+          <a href="https://www.facebook.com/methodtothemadnesscafe/" target="_blank" rel="noopener noreferrer" class="social-link">Facebook</a>
+        </div>
       </div>
       <div class="visit-map">
         <iframe
@@ -345,26 +329,23 @@
     </div>
   </section>
 
-  <!-- CURTAIN CALL / FOOTER -->
+  <!-- FOOTER -->
   <footer class="footer">
     <div class="footer-inner">
-      <div class="footer-logo-circle">
-        <img src="Method-to-the-Madness-Logo.png" alt="Method to the Madness" class="footer-logo-img">
+      <div class="footer-top">
+        <img src="Method-to-the-Madness-Logo.png" alt="Method to the Madness" class="footer-logo">
+        <nav class="footer-links" aria-label="Footer">
+          <a href="#about">About</a>
+          <a href="#menu">Menu</a>
+          <a href="#gallery">Gallery</a>
+          <a href="#visit">Find Us</a>
+        </nav>
+        <a href="tel:0737063793" class="btn btn-dark">Call Us</a>
       </div>
-      <div class="footer-ornament" aria-hidden="true">&#10070; &nbsp; &#10022; &nbsp; &#10070;</div>
-      <blockquote class="footer-quote">
-        &ldquo;We know what we are, but know not what we may be.&rdquo;
-      </blockquote>
-      <cite class="footer-quote-attr">&mdash; Hamlet</cite>
-      <nav class="footer-links" aria-label="Footer navigation">
-        <a href="https://www.instagram.com/methodtothemadnesscafe/" target="_blank" rel="noopener noreferrer">Instagram</a>
-        <span aria-hidden="true">&bull;</span>
-        <a href="https://www.facebook.com/methodtothemadnesscafe/" target="_blank" rel="noopener noreferrer">Facebook</a>
-        <span aria-hidden="true">&bull;</span>
-        <a href="tel:0737063793">(07) 3706 3793</a>
-      </nav>
-      <p class="footer-address">3/9 Marshall Lane, Kenmore QLD 4069</p>
-      <p class="footer-copy">&copy; 2025 Method to the Madness. All the madness reserved.</p>
+      <div class="footer-bottom">
+        <p class="footer-address">3/9 Marshall Lane, Kenmore QLD 4069</p>
+        <p class="footer-copy">&copy; 2025 Method to the Madness. All rights reserved.</p>
+      </div>
     </div>
   </footer>
 
