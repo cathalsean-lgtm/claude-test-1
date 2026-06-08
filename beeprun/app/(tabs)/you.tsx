@@ -1,13 +1,25 @@
-import { useEffect, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, SafeAreaView, Dimensions } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+import { useState, useCallback } from 'react';
+import { ScrollView, View, Text, StyleSheet, SafeAreaView, Dimensions, TouchableOpacity } from 'react-native';
+import Svg, { Path, Line, Text as SvgText } from 'react-native-svg';
 import { useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
-import { colors, spacing, borders } from '../../src/theme';
 import { loadResults, type TestResult } from '../../src/storage';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CHART_WIDTH = SCREEN_WIDTH - spacing.md * 2;
+
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+
+const C = {
+  surface: '#f9f9f9',
+  onSurface: '#1a1c1c',
+  secondary: '#5e5e5e',
+  brandRed: '#FF3B30',
+  outlineVariant: '#e7bdb7',
+  surfaceContainerHighest: '#e2e2e2',
+  surfaceContainerLow: '#f3f3f4',
+  surfaceContainer: '#eeeeee',
+  white: '#ffffff',
+  accentAmber: '#FF9500',
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -24,18 +36,13 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
 }
 
-function heatColor(val: number): string {
-  switch (val) {
-    case 1: return '#FFBBB8';
-    case 2: return '#FF6B63';
-    case 3: return colors.accent;
-    default: return colors.bgSecondary;
-  }
-}
-
-function buildHeatmap(results: TestResult[]): number[][] {
-  const weeks = 12;
-  const grid: number[][] = Array.from({ length: weeks }, () => Array(7).fill(0));
+// Build 7-col heatmap (last 10 weeks, columns = days of week M-S)
+function buildHeatmap(results: TestResult[], bestId?: string): { value: number; isBest: boolean }[][] {
+  const weeks = 10;
+  const grid: { value: number; isBest: boolean }[][] = Array.from(
+    { length: weeks },
+    () => Array(7).fill(null).map(() => ({ value: 0, isBest: false }))
+  );
   const now = new Date();
   results.forEach(r => {
     const d = new Date(r.date);
@@ -44,79 +51,146 @@ function buildHeatmap(results: TestResult[]): number[][] {
     const weeksAgo = Math.floor(daysAgo / 7);
     if (weeksAgo < weeks) {
       const weekIdx = weeks - 1 - weeksAgo;
-      const dayIdx = d.getDay();
-      grid[weekIdx][dayIdx] = Math.min(3, (grid[weekIdx][dayIdx] || 0) + 1);
+      // day 0=Sun, shift to Mon=0..Sun=6
+      const dayIdx = (d.getDay() + 6) % 7;
+      grid[weekIdx][dayIdx].value = Math.min(3, (grid[weekIdx][dayIdx].value || 0) + 1);
+      if (r.id === bestId) grid[weekIdx][dayIdx].isBest = true;
     }
   });
   return grid;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── SVG Line Chart ───────────────────────────────────────────────────────────
 
-function SectionHeader({ title }: { title: string }) {
-  return <Text style={styles.sectionHeader}>{title}</Text>;
-}
+const CHART_W = SCREEN_WIDTH - 40; // 20px padding each side
+const CHART_H = 120;
+const CHART_PAD_L = 8;
+const CHART_PAD_R = 8;
+const CHART_PAD_T = 12;
+const CHART_PAD_B = 24;
 
-function StatTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function LineChartSvg({ data }: { data: number[] }) {
+  if (data.length < 2) {
+    return (
+      <View style={styles.chartContainer}>
+        <Text style={[styles.labelCaps, { textAlign: 'center', padding: 20 }]}>NOT ENOUGH DATA</Text>
+      </View>
+    );
+  }
+
+  const innerW = CHART_W - CHART_PAD_L - CHART_PAD_R;
+  const innerH = CHART_H - CHART_PAD_T - CHART_PAD_B;
+
+  const minVal = Math.min(...data);
+  const maxVal = Math.max(...data);
+  const range = maxVal - minVal || 1;
+
+  const points = data.map((v, i) => {
+    const x = CHART_PAD_L + (i / (data.length - 1)) * innerW;
+    const y = CHART_PAD_T + (1 - (v - minVal) / range) * innerH;
+    return { x, y };
+  });
+
+  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
   return (
-    <View style={styles.statTile}>
-      <Text style={styles.statTileValue}>{value}</Text>
-      {sub ? <Text style={styles.statTileSub}>{sub}</Text> : null}
-      <Text style={styles.statTileLabel}>{label}</Text>
+    <View style={styles.chartContainer}>
+      <Svg width={CHART_W} height={CHART_H}>
+        {/* Axis lines */}
+        <Line
+          x1={CHART_PAD_L}
+          y1={CHART_PAD_T}
+          x2={CHART_PAD_L}
+          y2={CHART_PAD_T + innerH}
+          stroke={C.outlineVariant}
+          strokeWidth={0.5}
+        />
+        <Line
+          x1={CHART_PAD_L}
+          y1={CHART_PAD_T + innerH}
+          x2={CHART_PAD_L + innerW}
+          y2={CHART_PAD_T + innerH}
+          stroke={C.outlineVariant}
+          strokeWidth={0.5}
+        />
+
+        {/* Data line */}
+        <Path
+          d={pathD}
+          stroke={C.brandRed}
+          strokeWidth={2}
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Month labels */}
+        <SvgText
+          x={CHART_PAD_L}
+          y={CHART_H - 4}
+          fontSize={10}
+          fontWeight="600"
+          fill={C.secondary}
+          letterSpacing={0.5}
+        >
+          JAN
+        </SvgText>
+        <SvgText
+          x={CHART_PAD_L + innerW - 16}
+          y={CHART_H - 4}
+          fontSize={10}
+          fontWeight="600"
+          fill={C.secondary}
+          letterSpacing={0.5}
+        >
+          JUN
+        </SvgText>
+      </Svg>
     </View>
   );
 }
 
-function HistoryRow({ item, isLast }: { item: TestResult; isLast: boolean }) {
+// ─── Heatmap ─────────────────────────────────────────────────────────────────
+
+const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+function Heatmap({ grid }: { grid: { value: number; isBest: boolean }[][] }) {
+  const cellSize = Math.floor((SCREEN_WIDTH - 40 - 6 * 4) / 7);
   return (
     <View>
-      <View style={styles.historyRow}>
-        <View style={styles.historyLeft}>
-          <Text style={styles.historyDate}>{formatDate(item.date)}</Text>
-          <Text style={styles.historyLevel}>LVL {item.level + 1}, SH {item.shuttle + 1}</Text>
-        </View>
-        <View style={styles.historyRight}>
-          <Text style={styles.historyScore}>{item.score}</Text>
-          <Text style={styles.historyVo2}>VO2 {item.vo2}</Text>
-        </View>
-      </View>
-      {!isLast && <View style={styles.hairline} />}
-    </View>
-  );
-}
-
-function Heatmap({ grid }: { grid: number[][] }) {
-  const cellSize = Math.floor((CHART_WIDTH - 6 * 4) / 7);
-  return (
-    <View style={styles.heatmapWrap}>
-      <View style={styles.heatmapGrid}>
-        {grid.map((week, wi) => (
-          <View key={wi} style={styles.heatmapRow}>
-            {week.map((val, di) => (
-              <View
-                key={di}
-                style={[styles.heatmapCell, { width: cellSize, height: cellSize, backgroundColor: heatColor(val) }]}
-              />
-            ))}
+      {/* Day headers */}
+      <View style={styles.heatmapDayRow}>
+        {DAY_LABELS.map((d, i) => (
+          <View key={i} style={[styles.heatmapDayCell, { width: cellSize }]}>
+            <Text style={styles.heatmapDayLabel}>{d}</Text>
           </View>
         ))}
       </View>
-      <View style={styles.heatmapLegend}>
-        <Text style={styles.heatmapLegendText}>LESS</Text>
-        {[0, 1, 2, 3].map(v => (
-          <View key={v} style={[styles.heatmapLegendDot, { backgroundColor: heatColor(v) }]} />
-        ))}
-        <Text style={styles.heatmapLegendText}>MORE</Text>
-      </View>
-    </View>
-  );
-}
 
-function EmptyState() {
-  return (
-    <View style={styles.emptyState}>
-      <Text style={styles.emptyTitle}>NO TESTS YET</Text>
-      <Text style={styles.emptySub}>Complete a beep test to see your progress here.</Text>
+      {/* Grid */}
+      {grid.map((week, wi) => (
+        <View key={wi} style={styles.heatmapRow}>
+          {week.map((cell, di) => {
+            let bg = C.surfaceContainerLow;
+            if (cell.value > 0) bg = C.brandRed;
+            if (cell.isBest) bg = C.accentAmber;
+            return (
+              <View
+                key={di}
+                style={[styles.heatmapCell, { width: cellSize, height: cellSize, backgroundColor: bg }]}
+              />
+            );
+          })}
+        </View>
+      ))}
+
+      {/* Legend */}
+      <View style={styles.heatmapLegend}>
+        <View style={[styles.heatmapLegendSwatch, { backgroundColor: C.brandRed }]} />
+        <Text style={styles.heatmapLegendText}>TEST DAY</Text>
+        <View style={[styles.heatmapLegendSwatch, { backgroundColor: C.accentAmber, marginLeft: 12 }]} />
+        <Text style={styles.heatmapLegendText}>PERSONAL BEST</Text>
+      </View>
     </View>
   );
 }
@@ -137,96 +211,130 @@ export default function YouScreen() {
     return parseFloat(r.score) > parseFloat(b.score) ? r : b;
   }, null);
 
-  const heatmap = buildHeatmap(results);
-  const chartResults = [...results].reverse().slice(-7);
-  const vo2Data = chartResults.length > 0 ? chartResults.map(r => r.vo2) : [0];
-  const chartLabels = chartResults.length > 0 ? chartResults.map(r => formatDate(r.date).split(' ')[0]) : ['—'];
+  const bestId = best?.id;
+  const heatmap = buildHeatmap(results, bestId);
+  const chartData = [...results].reverse().slice(-12).map(r => r.vo2);
+
+  // City rank mock
+  const cityRank = results.length > 0 ? '#12' : '—';
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.avatarSmall} />
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTimer}>▶</Text>
+          <Text style={styles.headerTitle}>BeepRun</Text>
+        </View>
+        <TouchableOpacity hitSlop={8}>
+          <Text style={styles.headerIcon}>⚙</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.hairline} />
+
       <ScrollView showsVerticalScrollIndicator={false}>
 
-        {/* Profile header */}
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarInitials}>SD</Text>
+        {/* Profile section */}
+        <View style={styles.profileSection}>
+          <View style={styles.profileAvatar} />
+          <Text style={styles.profileName}>Alex Rivera</Text>
+          <Text style={styles.profileHandle}>@arivers</Text>
+        </View>
+
+        <View style={styles.hairline} />
+
+        {/* 2-col stats: PB + City Rank */}
+        <View style={styles.pbRankGrid}>
+          <View style={styles.pbRankCell}>
+            <Text style={styles.labelCaps}>PERSONAL BEST</Text>
+            <Text style={[styles.heroMetric, { color: C.brandRed }]}>
+              {best ? best.score : '—'}
+            </Text>
           </View>
-          <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>Sean Donnelly</Text>
-            <Text style={styles.profileHandle}>@seandonnelly</Text>
+          <View style={styles.pbRankDivider} />
+          <View style={styles.pbRankCell}>
+            <Text style={styles.labelCaps}>CITY RANK</Text>
+            <Text style={[styles.heroMetric, { color: C.onSurface }]}>{cityRank}</Text>
           </View>
         </View>
 
         <View style={styles.hairline} />
 
-        {/* Top stats */}
-        <View style={styles.statsRow}>
-          <StatTile label="TESTS" value={String(results.length)} />
-          <View style={styles.statDivider} />
-          <StatTile
-            label="BEST SCORE"
-            value={best ? best.score : '—'}
-            sub={best ? `LVL ${best.level + 1}` : undefined}
-          />
-          <View style={styles.statDivider} />
-          <StatTile
-            label="BEST VO2"
-            value={best ? String(best.vo2) : '—'}
-            sub={best ? fitnessCategory(best.vo2) : undefined}
-          />
+        {/* Level scores over time */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>LEVEL SCORES OVER TIME</Text>
+          <LineChartSvg data={chartData.length > 1 ? chartData : [40, 42, 44, 46, 48, 50, 51]} />
         </View>
 
         <View style={styles.hairline} />
 
-        {results.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <>
-            {/* VO2 trend chart */}
-            <View style={styles.section}>
-              <SectionHeader title="VO2 MAX TREND" />
-              <LineChart
-                data={{ labels: chartLabels, datasets: [{ data: vo2Data }] }}
-                width={CHART_WIDTH}
-                height={180}
-                chartConfig={{
-                  backgroundGradientFrom: colors.white,
-                  backgroundGradientTo: colors.white,
-                  decimalPlaces: 1,
-                  color: () => colors.accent,
-                  labelColor: () => colors.textSecondary,
-                  propsForDots: { r: '4', strokeWidth: '2', stroke: colors.accent, fill: colors.white },
-                  propsForBackgroundLines: { stroke: colors.bgSecondary, strokeWidth: 1 },
-                }}
-                bezier
-                style={styles.chart}
-                withInnerLines
-                withOuterLines={false}
-              />
+        {/* Recent results */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>RECENT RESULTS</Text>
+          <View style={styles.tableContainer}>
+            {/* Header row */}
+            <View style={styles.tableHeader}>
+              <Text style={[styles.labelCaps, { flex: 2 }]}>DATE</Text>
+              <Text style={[styles.labelCaps, { flex: 1, textAlign: 'center' }]}>SCORE</Text>
+              <Text style={[styles.labelCaps, { flex: 1, textAlign: 'right' }]}>VO2 MAX</Text>
             </View>
-
             <View style={styles.hairline} />
 
-            {/* Heatmap */}
-            <View style={styles.section}>
-              <SectionHeader title="ACTIVITY — LAST 12 WEEKS" />
-              <Heatmap grid={heatmap} />
-            </View>
+            {results.length === 0 ? (
+              <View style={styles.emptyRow}>
+                <Text style={styles.labelCaps}>NO TESTS YET</Text>
+              </View>
+            ) : (
+              results.slice().reverse().slice(0, 8).map((item, i, arr) => {
+                const isPB = item.id === bestId;
+                return (
+                  <View key={item.id}>
+                    <View style={styles.tableRow}>
+                      <Text style={[styles.tableCell, { flex: 2 }]}>{formatDate(item.date)}</Text>
+                      <View style={[styles.tableCellCenter, { flex: 1 }]}>
+                        {isPB && (
+                          <View style={styles.pbBadge}>
+                            <Text style={styles.pbBadgeText}>PB</Text>
+                          </View>
+                        )}
+                        <Text style={styles.tableCell}>{item.score}</Text>
+                      </View>
+                      <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>{item.vo2}</Text>
+                    </View>
+                    {i < arr.length - 1 && <View style={styles.hairline} />}
+                  </View>
+                );
+              })
+            )}
+          </View>
+        </View>
 
-            <View style={styles.hairline} />
+        <View style={styles.hairline} />
 
-            {/* History */}
-            <View style={styles.section}>
-              <SectionHeader title="TEST HISTORY" />
-              {results.map((item, i) => (
-                <HistoryRow key={item.id} item={item} isLast={i === results.length - 1} />
-              ))}
-            </View>
-          </>
-        )}
+        {/* Training heatmap */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>TRAINING HEATMAP</Text>
+          <Heatmap grid={heatmap} />
+        </View>
 
-        <View style={{ height: spacing.xl }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Bottom nav */}
+      <View style={styles.bottomNav}>
+        <TouchableOpacity style={styles.navTab}>
+          <Text style={styles.navTabLabel}>HOME</Text>
+        </TouchableOpacity>
+        <View style={styles.navRecordWrapper}>
+          <View style={styles.navRecordBtn}>
+            <Text style={styles.navRecordIcon}>▶</Text>
+          </View>
+        </View>
+        <TouchableOpacity style={styles.navTab}>
+          <Text style={[styles.navTabLabel, { color: C.brandRed }]}>YOU</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -236,175 +344,260 @@ export default function YouScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: C.surface,
   },
-  profileHeader: {
+
+  // Header
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    gap: spacing.md,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: C.white,
   },
-  avatarCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.accent,
+  avatarSmall: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: C.surfaceContainer,
+  },
+  headerCenter: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
   },
-  avatarInitials: {
+  headerTimer: {
+    fontSize: 14,
+    color: C.brandRed,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: C.onSurface,
+    letterSpacing: -0.22,
+  },
+  headerIcon: {
     fontSize: 20,
-    fontWeight: '700',
-    color: colors.white,
-    letterSpacing: 0.5,
+    color: C.secondary,
   },
-  profileInfo: {
-    flex: 1,
+
+  // Hairline
+  hairline: {
+    height: 0.5,
+    backgroundColor: C.outlineVariant,
+  },
+
+  // Label caps
+  labelCaps: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.72,
+    textTransform: 'uppercase',
+    color: C.secondary,
+  },
+
+  // Hero metric
+  heroMetric: {
+    fontSize: 64,
+    fontWeight: '700',
+    letterSpacing: -2.56,
+    lineHeight: 72,
+  },
+
+  // Profile
+  profileSection: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  profileAvatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: C.surfaceContainer,
+    borderWidth: 2,
+    borderColor: C.brandRed,
+    marginBottom: 4,
   },
   profileName: {
-    fontSize: 18,
+    fontSize: 34,
     fontWeight: '700',
-    color: colors.textPrimary,
-    letterSpacing: -0.3,
+    color: C.onSurface,
+    letterSpacing: -0.68,
   },
   profileHandle: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginTop: 2,
+    fontSize: 17,
+    fontWeight: '400',
+    color: C.secondary,
   },
-  statsRow: {
+
+  // PB / rank grid
+  pbRankGrid: {
     flexDirection: 'row',
-    paddingVertical: spacing.md,
+    backgroundColor: C.outlineVariant,
+    gap: 1,
   },
-  statTile: {
+  pbRankDivider: {
+    width: 1,
+    backgroundColor: C.outlineVariant,
+  },
+  pbRankCell: {
     flex: 1,
     alignItems: 'center',
-    gap: 2,
+    paddingVertical: 24,
+    backgroundColor: C.white,
+    gap: 4,
   },
-  statTileValue: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
+
+  // Section
+  section: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    backgroundColor: C.white,
+    gap: 12,
   },
-  statTileSub: {
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.72,
+    textTransform: 'uppercase',
+    color: C.secondary,
+  },
+
+  // Chart
+  chartContainer: {
+    borderWidth: 0.5,
+    borderColor: C.outlineVariant,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    paddingVertical: 8,
+  },
+
+  // Table
+  tableContainer: {
+    borderWidth: 0.5,
+    borderColor: C.outlineVariant,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: C.surfaceContainerLow,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  tableCell: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: C.onSurface,
+  },
+  tableCellCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  pbBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    backgroundColor: 'rgba(255,59,48,0.10)',
+  },
+  pbBadgeText: {
     fontSize: 10,
-    fontWeight: '500',
-    color: colors.accent,
-    letterSpacing: 0.3,
-  },
-  statTileLabel: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: colors.textSecondary,
+    fontWeight: '600',
+    color: C.brandRed,
     letterSpacing: 0.5,
   },
-  statDivider: {
-    width: borders.hairline,
-    backgroundColor: borders.color,
-    alignSelf: 'stretch',
-    marginVertical: spacing.xs,
+  emptyRow: {
+    padding: 20,
+    alignItems: 'center',
   },
-  section: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  sectionHeader: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    letterSpacing: 0.8,
-    marginBottom: spacing.md,
-  },
-  chart: {
-    borderRadius: 8,
-    marginLeft: -spacing.md,
-  },
-  heatmapWrap: {
-    gap: spacing.sm,
-  },
-  heatmapGrid: {
+
+  // Heatmap
+  heatmapDayRow: {
+    flexDirection: 'row',
     gap: 4,
+    marginBottom: 4,
+  },
+  heatmapDayCell: {
+    alignItems: 'center',
+  },
+  heatmapDayLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    color: C.secondary,
   },
   heatmapRow: {
     flexDirection: 'row',
     gap: 4,
+    marginBottom: 4,
   },
   heatmapCell: {
-    borderRadius: 3,
+    borderRadius: 0,
   },
   heatmapLegend: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    justifyContent: 'flex-end',
+    gap: 6,
+    marginTop: 8,
   },
-  heatmapLegendDot: {
+  heatmapLegendSwatch: {
     width: 10,
     height: 10,
-    borderRadius: 2,
   },
   heatmapLegendText: {
     fontSize: 10,
-    color: colors.textTertiary,
-    letterSpacing: 0.3,
-  },
-  historyRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm + 2,
-  },
-  historyLeft: {
-    gap: 2,
-  },
-  historyDate: {
-    fontSize: 14,
     fontWeight: '600',
-    color: colors.textPrimary,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    color: C.secondary,
   },
-  historyLevel: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    letterSpacing: 0.3,
+
+  // Bottom nav
+  bottomNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 0.5,
+    borderTopColor: C.outlineVariant,
+    backgroundColor: C.white,
+    paddingBottom: 8,
   },
-  historyRight: {
-    alignItems: 'flex-end',
-    gap: 2,
+  navTab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 4,
   },
-  historyScore: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.accent,
-    letterSpacing: -0.5,
+  navTabLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.72,
+    textTransform: 'uppercase',
+    color: C.secondary,
   },
-  historyVo2: {
-    fontSize: 11,
-    color: colors.textSecondary,
+  navRecordWrapper: {
+    alignItems: 'center',
+    marginTop: -20,
   },
-  hairline: {
-    height: borders.hairline,
-    backgroundColor: borders.color,
-  },
-  emptyState: {
+  navRecordBtn: {
+    width: 48,
+    height: 48,
+    backgroundColor: C.brandRed,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.xxl,
-    paddingHorizontal: spacing.lg,
   },
-  emptyTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    letterSpacing: 1,
-    marginBottom: spacing.sm,
-  },
-  emptySub: {
-    fontSize: 13,
-    color: colors.textTertiary,
-    textAlign: 'center',
-    lineHeight: 20,
+  navRecordIcon: {
+    fontSize: 18,
+    color: C.white,
   },
 });
