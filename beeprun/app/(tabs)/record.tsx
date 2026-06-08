@@ -93,6 +93,7 @@ export default function RecordScreen() {
   const startTimeRef = useRef<number>(0);
   const levelRef = useRef(0);
   const shuttleRef = useRef(0);
+  const soundRef = useRef<Audio.Sound | null>(null);
 
   // Animated value for SVG stroke dash offset
   const dashOffsetAnim = useRef(new Animated.Value(SVG_CIRCUMFERENCE)).current;
@@ -130,19 +131,38 @@ export default function RecordScreen() {
     }
   };
 
+  // Web Audio API beep fallback for browser testing
+  const webBeep = useCallback((times: number) => {
+    if (typeof window === 'undefined' || !(window as any).AudioContext && !(window as any).webkitAudioContext) return;
+    const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+    const ctx = new AudioCtx();
+    for (let i = 0; i < times; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.6, ctx.currentTime + i * 0.22);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.22 + 0.18);
+      osc.start(ctx.currentTime + i * 0.22);
+      osc.stop(ctx.currentTime + i * 0.22 + 0.2);
+    }
+  }, []);
+
   const playBeep = useCallback(async (times = 1) => {
-    if (Platform.OS === 'web') return;
+    if (Platform.OS === 'web') {
+      webBeep(times);
+      return;
+    }
     try {
+      if (!soundRef.current) return;
       for (let i = 0; i < times; i++) {
-        const { sound } = await Audio.Sound.createAsync(
-          require('../../assets/beep.wav'),
-          { shouldPlay: true, volume: 1.0 }
-        );
+        await soundRef.current.replayAsync();
         await new Promise(r => setTimeout(r, 220));
-        await sound.unloadAsync();
       }
     } catch {}
-  }, []);
+  }, [webBeep]);
 
   const flashBackground = useCallback(() => {
     flashAnim.setValue(1);
@@ -240,9 +260,16 @@ export default function RecordScreen() {
   };
 
   useEffect(() => {
-    Audio.setAudioModeAsync({ playsInSilentModeIOS: true }).catch(() => {});
+    Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: true }).catch(() => {});
+    // Preload beep sound once so replayAsync() fires instantly
+    if (Platform.OS !== 'web') {
+      Audio.Sound.createAsync(require('../../assets/beep.wav'), { shouldPlay: false, volume: 1.0 })
+        .then(({ sound }) => { soundRef.current = sound; })
+        .catch(() => {});
+    }
     return () => {
       clearTimer();
+      soundRef.current?.unloadAsync().catch(() => {});
     };
   }, []);
 
