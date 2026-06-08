@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Audio } from 'expo-av';
 import { colors, spacing, borders } from '../../src/theme';
+import { saveResult } from '../../src/storage';
 
 // ─── PACER Protocol ───────────────────────────────────────────────────────────
 
@@ -126,6 +127,7 @@ export default function RecordScreen() {
           setLevel(lvl);
           setShuttle(sh);
           setPhase('done');
+          saveResult({ level: lvl, shuttle: sh, score: scoreLabel(lvl, sh), vo2: estimateVO2Max(lvl, sh) }).catch(() => {});
           return;
         }
         playBeep(3);
@@ -169,6 +171,7 @@ export default function RecordScreen() {
   const stop = () => {
     clearTimer();
     setPhase('done');
+    saveResult({ level, shuttle, score: scoreLabel(level, shuttle), vo2: estimateVO2Max(level, shuttle) }).catch(() => {});
   };
 
   const reset = () => {

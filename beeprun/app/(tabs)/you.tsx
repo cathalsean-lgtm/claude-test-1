@@ -1,49 +1,15 @@
+import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, SafeAreaView, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { colors, spacing, borders, typography } from '../../src/theme';
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const PROFILE = {
-  name: 'Sean Donnelly',
-  age: 28,
-  handle: '@seandonnelly',
-  testsCompleted: 14,
-  bestScore: '12.4',
-  bestVO2: 54.2,
-  bestLevel: 12,
-  bestShuttle: 4,
-};
-
-const HISTORY = [
-  { date: 'JAN 8', score: '8.2', level: 8, shuttle: 2, vo2: 41.3 },
-  { date: 'JAN 22', score: '9.1', level: 9, shuttle: 1, vo2: 44.1 },
-  { date: 'FEB 5', score: '9.8', level: 9, shuttle: 8, vo2: 46.0 },
-  { date: 'FEB 19', score: '10.4', level: 10, shuttle: 4, vo2: 47.8 },
-  { date: 'MAR 4', score: '11.1', level: 11, shuttle: 1, vo2: 49.9 },
-  { date: 'MAR 18', score: '11.8', level: 11, shuttle: 8, vo2: 51.6 },
-  { date: 'APR 1', score: '12.4', level: 12, shuttle: 4, vo2: 54.2 },
-];
-
-// Calendar heatmap: last 12 weeks × 7 days
-// 0 = no test, 1 = low, 2 = med, 3 = high
-const HEATMAP: number[][] = [
-  [0, 0, 0, 0, 1, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 1, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0],
-  [0, 1, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 2, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 2, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 3, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0],
-];
+import { useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
+import { colors, spacing, borders } from '../../src/theme';
+import { loadResults, type TestResult } from '../../src/storage';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CHART_WIDTH = SCREEN_WIDTH - spacing.md * 2;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fitnessCategory(vo2: number): string {
   if (vo2 >= 55) return 'SUPERIOR';
@@ -53,6 +19,11 @@ function fitnessCategory(vo2: number): string {
   return 'NEEDS WORK';
 }
 
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+}
+
 function heatColor(val: number): string {
   switch (val) {
     case 1: return '#FFBBB8';
@@ -60,6 +31,24 @@ function heatColor(val: number): string {
     case 3: return colors.accent;
     default: return colors.bgSecondary;
   }
+}
+
+function buildHeatmap(results: TestResult[]): number[][] {
+  const weeks = 12;
+  const grid: number[][] = Array.from({ length: weeks }, () => Array(7).fill(0));
+  const now = new Date();
+  results.forEach(r => {
+    const d = new Date(r.date);
+    const msAgo = now.getTime() - d.getTime();
+    const daysAgo = Math.floor(msAgo / 86400000);
+    const weeksAgo = Math.floor(daysAgo / 7);
+    if (weeksAgo < weeks) {
+      const weekIdx = weeks - 1 - weeksAgo;
+      const dayIdx = d.getDay();
+      grid[weekIdx][dayIdx] = Math.min(3, (grid[weekIdx][dayIdx] || 0) + 1);
+    }
+  });
+  return grid;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -72,19 +61,19 @@ function StatTile({ label, value, sub }: { label: string; value: string; sub?: s
   return (
     <View style={styles.statTile}>
       <Text style={styles.statTileValue}>{value}</Text>
-      {sub && <Text style={styles.statTileSub}>{sub}</Text>}
+      {sub ? <Text style={styles.statTileSub}>{sub}</Text> : null}
       <Text style={styles.statTileLabel}>{label}</Text>
     </View>
   );
 }
 
-function HistoryRow({ item, isLast }: { item: typeof HISTORY[0]; isLast: boolean }) {
+function HistoryRow({ item, isLast }: { item: TestResult; isLast: boolean }) {
   return (
     <View>
       <View style={styles.historyRow}>
         <View style={styles.historyLeft}>
-          <Text style={styles.historyDate}>{item.date}</Text>
-          <Text style={styles.historyLevel}>LVL {item.level}, SH {item.shuttle}</Text>
+          <Text style={styles.historyDate}>{formatDate(item.date)}</Text>
+          <Text style={styles.historyLevel}>LVL {item.level + 1}, SH {item.shuttle + 1}</Text>
         </View>
         <View style={styles.historyRight}>
           <Text style={styles.historyScore}>{item.score}</Text>
@@ -96,20 +85,17 @@ function HistoryRow({ item, isLast }: { item: typeof HISTORY[0]; isLast: boolean
   );
 }
 
-function Heatmap() {
+function Heatmap({ grid }: { grid: number[][] }) {
   const cellSize = Math.floor((CHART_WIDTH - 6 * 4) / 7);
   return (
     <View style={styles.heatmapWrap}>
       <View style={styles.heatmapGrid}>
-        {HEATMAP.map((week, wi) => (
+        {grid.map((week, wi) => (
           <View key={wi} style={styles.heatmapRow}>
             {week.map((val, di) => (
               <View
                 key={di}
-                style={[
-                  styles.heatmapCell,
-                  { width: cellSize, height: cellSize, backgroundColor: heatColor(val) },
-                ]}
+                style={[styles.heatmapCell, { width: cellSize, height: cellSize, backgroundColor: heatColor(val) }]}
               />
             ))}
           </View>
@@ -126,11 +112,35 @@ function Heatmap() {
   );
 }
 
+function EmptyState() {
+  return (
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyTitle}>NO TESTS YET</Text>
+      <Text style={styles.emptySub}>Complete a beep test to see your progress here.</Text>
+    </View>
+  );
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function YouScreen() {
-  const vo2Data = HISTORY.map(h => h.vo2);
-  const labels = HISTORY.map(h => h.date.split(' ')[0]);
+  const [results, setResults] = useState<TestResult[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadResults().then(setResults).catch(() => {});
+    }, [])
+  );
+
+  const best = results.reduce<TestResult | null>((b, r) => {
+    if (!b) return r;
+    return parseFloat(r.score) > parseFloat(b.score) ? r : b;
+  }, null);
+
+  const heatmap = buildHeatmap(results);
+  const chartResults = [...results].reverse().slice(-7);
+  const vo2Data = chartResults.length > 0 ? chartResults.map(r => r.vo2) : [0];
+  const chartLabels = chartResults.length > 0 ? chartResults.map(r => formatDate(r.date).split(' ')[0]) : ['—'];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -139,13 +149,11 @@ export default function YouScreen() {
         {/* Profile header */}
         <View style={styles.profileHeader}>
           <View style={styles.avatarCircle}>
-            <Text style={styles.avatarInitials}>
-              {PROFILE.name.split(' ').map(n => n[0]).join('')}
-            </Text>
+            <Text style={styles.avatarInitials}>SD</Text>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{PROFILE.name}</Text>
-            <Text style={styles.profileHandle}>{PROFILE.handle}</Text>
+            <Text style={styles.profileName}>Sean Donnelly</Text>
+            <Text style={styles.profileHandle}>@seandonnelly</Text>
           </View>
         </View>
 
@@ -153,66 +161,69 @@ export default function YouScreen() {
 
         {/* Top stats */}
         <View style={styles.statsRow}>
-          <StatTile label="TESTS" value={String(PROFILE.testsCompleted)} />
+          <StatTile label="TESTS" value={String(results.length)} />
           <View style={styles.statDivider} />
-          <StatTile label="BEST SCORE" value={PROFILE.bestScore} sub={`LVL ${PROFILE.bestLevel}`} />
+          <StatTile
+            label="BEST SCORE"
+            value={best ? best.score : '—'}
+            sub={best ? `LVL ${best.level + 1}` : undefined}
+          />
           <View style={styles.statDivider} />
-          <StatTile label="BEST VO2" value={String(PROFILE.bestVO2)} sub={fitnessCategory(PROFILE.bestVO2)} />
-        </View>
-
-        <View style={styles.hairline} />
-
-        {/* VO2 max trend chart */}
-        <View style={styles.section}>
-          <SectionHeader title="VO2 MAX TREND" />
-          <LineChart
-            data={{
-              labels,
-              datasets: [{ data: vo2Data }],
-            }}
-            width={CHART_WIDTH}
-            height={180}
-            chartConfig={{
-              backgroundGradientFrom: colors.white,
-              backgroundGradientTo: colors.white,
-              decimalPlaces: 1,
-              color: () => colors.accent,
-              labelColor: () => colors.textSecondary,
-              propsForDots: {
-                r: '4',
-                strokeWidth: '2',
-                stroke: colors.accent,
-                fill: colors.white,
-              },
-              propsForBackgroundLines: {
-                stroke: colors.bgSecondary,
-                strokeWidth: 1,
-              },
-            }}
-            bezier
-            style={styles.chart}
-            withInnerLines
-            withOuterLines={false}
+          <StatTile
+            label="BEST VO2"
+            value={best ? String(best.vo2) : '—'}
+            sub={best ? fitnessCategory(best.vo2) : undefined}
           />
         </View>
 
         <View style={styles.hairline} />
 
-        {/* Activity heatmap */}
-        <View style={styles.section}>
-          <SectionHeader title="ACTIVITY — LAST 12 WEEKS" />
-          <Heatmap />
-        </View>
+        {results.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <>
+            {/* VO2 trend chart */}
+            <View style={styles.section}>
+              <SectionHeader title="VO2 MAX TREND" />
+              <LineChart
+                data={{ labels: chartLabels, datasets: [{ data: vo2Data }] }}
+                width={CHART_WIDTH}
+                height={180}
+                chartConfig={{
+                  backgroundGradientFrom: colors.white,
+                  backgroundGradientTo: colors.white,
+                  decimalPlaces: 1,
+                  color: () => colors.accent,
+                  labelColor: () => colors.textSecondary,
+                  propsForDots: { r: '4', strokeWidth: '2', stroke: colors.accent, fill: colors.white },
+                  propsForBackgroundLines: { stroke: colors.bgSecondary, strokeWidth: 1 },
+                }}
+                bezier
+                style={styles.chart}
+                withInnerLines
+                withOuterLines={false}
+              />
+            </View>
 
-        <View style={styles.hairline} />
+            <View style={styles.hairline} />
 
-        {/* Test history */}
-        <View style={styles.section}>
-          <SectionHeader title="TEST HISTORY" />
-          {[...HISTORY].reverse().map((item, i) => (
-            <HistoryRow key={item.date} item={item} isLast={i === HISTORY.length - 1} />
-          ))}
-        </View>
+            {/* Heatmap */}
+            <View style={styles.section}>
+              <SectionHeader title="ACTIVITY — LAST 12 WEEKS" />
+              <Heatmap grid={heatmap} />
+            </View>
+
+            <View style={styles.hairline} />
+
+            {/* History */}
+            <View style={styles.section}>
+              <SectionHeader title="TEST HISTORY" />
+              {results.map((item, i) => (
+                <HistoryRow key={item.id} item={item} isLast={i === results.length - 1} />
+              ))}
+            </View>
+          </>
+        )}
 
         <View style={{ height: spacing.xl }} />
       </ScrollView>
@@ -227,8 +238,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.white,
   },
-
-  // Profile header
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -264,8 +273,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
-
-  // Stats row
   statsRow: {
     flexDirection: 'row',
     paddingVertical: spacing.md,
@@ -299,8 +306,6 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     marginVertical: spacing.xs,
   },
-
-  // Section
   section: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
@@ -313,14 +318,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: spacing.md,
   },
-
-  // Chart
   chart: {
     borderRadius: 8,
     marginLeft: -spacing.md,
   },
-
-  // Heatmap
   heatmapWrap: {
     gap: spacing.sm,
   },
@@ -350,8 +351,6 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     letterSpacing: 0.3,
   },
-
-  // History
   historyRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -385,10 +384,27 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textSecondary,
   },
-
-  // Dividers
   hairline: {
     height: borders.hairline,
     backgroundColor: borders.color,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.lg,
+  },
+  emptyTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    letterSpacing: 1,
+    marginBottom: spacing.sm,
+  },
+  emptySub: {
+    fontSize: 13,
+    color: colors.textTertiary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
