@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Animated,
 } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { supabase } from '../../src/supabase';
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 
@@ -23,7 +25,7 @@ const C = {
   white: '#ffffff',
 };
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
+// ─── Mock Stories (static until social follow UI is built) ───────────────────
 
 const STORIES = [
   { id: '1', name: 'ALEX', hasActivity: true },
@@ -32,41 +34,29 @@ const STORIES = [
   { id: '4', name: 'MI...', hasActivity: false },
 ];
 
-const ACTIVITIES = [
-  {
-    id: '1',
-    name: 'Sarah Miller',
-    timeAgo: '2H AGO',
-    score: '12.4',
-    level: 'LEVEL 12, SHUTTLE 4',
-    vo2: 'VO2 MAX: 54.2',
-    likes: 12,
-    comments: 3,
-    isPB: true,
-  },
-  {
-    id: '2',
-    name: 'Alex Rivera',
-    timeAgo: '5H AGO',
-    score: '10.8',
-    level: 'LEVEL 10, SHUTTLE 8',
-    vo2: 'VO2 MAX: 48.5',
-    likes: 24,
-    comments: 8,
-    isPB: false,
-  },
-  {
-    id: '3',
-    name: 'Jordan Smith',
-    timeAgo: 'YESTERDAY',
-    score: '14.1',
-    level: 'LEVEL 14, SHUTTLE 1',
-    vo2: 'VO2 MAX: 62.3',
-    likes: 45,
-    comments: 14,
-    isPB: false,
-  },
-];
+// ─── Feed Item Type ───────────────────────────────────────────────────────────
+
+type FeedItem = {
+  id: string;
+  name: string;
+  timeAgo: string;
+  score: string;
+  level: string;
+  vo2: string;
+  likes: number;
+  comments: number;
+  isPB: boolean;
+};
+
+function timeAgoLabel(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const h = Math.floor(ms / 3600000);
+  if (h < 1) return 'JUST NOW';
+  if (h < 24) return `${h}H AGO`;
+  const d = Math.floor(h / 24);
+  if (d === 1) return 'YESTERDAY';
+  return `${d}D AGO`;
+}
 
 // ─── Pulsing Story Ring ───────────────────────────────────────────────────────
 
@@ -243,7 +233,61 @@ function EmptyFeed({ name }: { name: string }) {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
-  const showEmpty = ACTIVITIES.length === 0;
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      const fetchFeed = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Get IDs of people this user follows
+        const { data: follows } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
+
+        const followingIds = (follows ?? []).map((f: { following_id: string }) => f.following_id);
+        // Include own results in feed
+        const ids = [...followingIds, user.id];
+
+        const { data: rows } = await supabase
+          .from('results')
+          .select('*, profiles(first_name)')
+          .in('user_id', ids)
+          .order('recorded_at', { ascending: false })
+          .limit(30);
+
+        if (!rows || !active) return;
+
+        // Find each user's PB score for is_pb badge
+        const pbByUser: Record<string, number> = {};
+        rows.forEach((r: any) => {
+          const s = parseFloat(r.score);
+          if (!pbByUser[r.user_id] || s > pbByUser[r.user_id]) pbByUser[r.user_id] = s;
+        });
+
+        const items: FeedItem[] = rows.map((r: any) => ({
+          id: r.id,
+          name: r.profiles?.first_name ?? 'Unknown',
+          timeAgo: timeAgoLabel(r.recorded_at),
+          score: r.score,
+          level: `LEVEL ${r.level}, SHUTTLE ${r.shuttle}`,
+          vo2: `VO2 MAX: ${Number(r.vo2_max).toFixed(1)}`,
+          likes: 0,
+          comments: 0,
+          isPB: parseFloat(r.score) >= pbByUser[r.user_id],
+        }));
+
+        if (active) setFeed(items);
+      };
+      fetchFeed();
+      return () => { active = false; };
+    }, [])
+  );
+
+  const showEmpty = feed.length === 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -252,13 +296,13 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
         <StoryRow />
         {showEmpty ? (
-          <EmptyFeed name="Jake" />
+          <EmptyFeed name="You" />
         ) : (
-          ACTIVITIES.map((item, index) => (
+          feed.map((item, index) => (
             <ActivityCard
               key={item.id}
               item={item}
-              isLast={index === ACTIVITIES.length - 1}
+              isLast={index === feed.length - 1}
             />
           ))
         )}

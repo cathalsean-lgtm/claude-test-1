@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react';
 import { ScrollView, View, Text, StyleSheet, SafeAreaView, Dimensions, TouchableOpacity } from 'react-native';
 import Svg, { Path, Line, Text as SvgText } from 'react-native-svg';
 import { useFocusEffect } from 'expo-router';
-import { loadResults, type TestResult } from '../../src/storage';
+import { loadResults, saveResult, type TestResult } from '../../src/storage';
+import { supabase } from '../../src/supabase';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -202,7 +203,41 @@ export default function YouScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadResults().then(setResults).catch(() => {});
+      let active = true;
+      const fetch = async () => {
+        const local = await loadResults().catch(() => [] as TestResult[]);
+        if (active) setResults(local);
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: rows } = await supabase
+          .from('results')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('recorded_at', { ascending: false });
+
+        if (!rows || !active) return;
+
+        const localIds = new Set(local.map(r => r.id));
+        const remoteOnly = rows
+          .filter(r => !localIds.has(r.id))
+          .map(r => ({
+            id: r.id,
+            date: r.recorded_at,
+            level: r.level,
+            shuttle: r.shuttle,
+            score: r.score,
+            vo2: Number(r.vo2_max),
+          } as TestResult));
+
+        for (const r of remoteOnly) await saveResult(r).catch(() => {});
+
+        const merged = await loadResults().catch(() => local);
+        if (active) setResults(merged);
+      };
+      fetch();
+      return () => { active = false; };
     }, [])
   );
 
