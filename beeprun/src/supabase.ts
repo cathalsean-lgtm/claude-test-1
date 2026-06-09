@@ -14,3 +14,22 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 export type { User, Session } from '@supabase/supabase-js';
+
+export async function syncResultToSupabase(result: {
+  level: number;
+  shuttle: number;
+  score: string;
+  vo2: number;
+  isPB?: boolean;
+}): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from('results').insert({
+    user_id: user.id,
+    level: result.level,
+    shuttle: result.shuttle,
+    score: result.score,
+    vo2_max: result.vo2,
+    is_pb: result.isPB ?? false,
+  });
+}

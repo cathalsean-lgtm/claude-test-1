@@ -13,6 +13,7 @@ import { Audio } from 'expo-av';
 import Svg, { Circle } from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
 import { saveResult, loadProfile } from '../../src/storage';
+import { syncResultToSupabase } from '../../src/supabase';
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 
@@ -211,7 +212,9 @@ export default function RecordScreen() {
           setLevel(lvl);
           setShuttle(sh);
           setPhase('done');
-          saveResult({ level: lvl, shuttle: sh, score: scoreLabel(lvl, sh), vo2: estimateVO2Max(lvl, sh) }).catch(() => {});
+          saveResult({ level: lvl, shuttle: sh, score: scoreLabel(lvl, sh), vo2: estimateVO2Max(lvl, sh) }).then(entry => {
+            syncResultToSupabase({ ...entry, isPB: false }).catch(() => {});
+          }).catch(() => {});
           return;
         }
         playBeep(3);
@@ -268,7 +271,9 @@ export default function RecordScreen() {
   const stop = () => {
     clearTimer();
     setPhase('done');
-    saveResult({ level, shuttle, score: scoreLabel(level, shuttle), vo2: estimateVO2Max(level, shuttle) }).catch(() => {});
+    saveResult({ level, shuttle, score: scoreLabel(level, shuttle), vo2: estimateVO2Max(level, shuttle) }).then(entry => {
+      syncResultToSupabase({ ...entry, isPB: false }).catch(() => {});
+    }).catch(() => {});
   };
 
   const reset = () => {

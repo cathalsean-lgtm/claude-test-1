@@ -1,5 +1,18 @@
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { router } from 'expo-router';
+import { supabase } from '../../src/supabase';
 
 const C = {
   surface: '#f9f9f9',
@@ -11,32 +24,98 @@ const C = {
 };
 
 export default function SplashScreen() {
-  const continueWith = (_provider: 'apple' | 'google') => {
-    router.push('/onboarding/permission');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const sendMagicLink = async () => {
+    if (!email.trim()) return;
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim().toLowerCase(),
+      options: { shouldCreateUser: true },
+    });
+    setLoading(false);
+    if (error) {
+      Alert.alert('Error', error.message);
+    } else {
+      setSent(true);
+    }
   };
 
+  if (sent) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.hero}>
+          <Text style={styles.heroNumber}>12.4</Text>
+          <Text style={styles.heroSub}>Your beep test. Tracked.</Text>
+        </View>
+        <View style={styles.buttons}>
+          <View style={styles.sentBox}>
+            <Text style={styles.sentTitle}>Check your email</Text>
+            <Text style={styles.sentSub}>
+              We sent a magic link to{'\n'}
+              <Text style={{ color: C.onSurface, fontWeight: '600' }}>{email}</Text>
+            </Text>
+            <TouchableOpacity onPress={() => setSent(false)} hitSlop={8}>
+              <Text style={styles.resendLink}>Use a different email</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.hero}>
-        <Text style={styles.heroNumber}>12.4</Text>
-        <Text style={styles.heroSub}>Your beep test. Tracked.</Text>
-      </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <SafeAreaView style={styles.container}>
+        <View style={styles.hero}>
+          <Text style={styles.heroNumber}>12.4</Text>
+          <Text style={styles.heroSub}>Your beep test. Tracked.</Text>
+        </View>
 
-      <View style={styles.buttons}>
-        <TouchableOpacity style={styles.btnApple} onPress={() => continueWith('apple')} activeOpacity={0.85}>
-          <Text style={styles.btnAppleText}> Continue with Apple</Text>
-        </TouchableOpacity>
+        <View style={styles.buttons}>
+          <TextInput
+            style={styles.input}
+            placeholder="your@email.com"
+            placeholderTextColor={C.secondary}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={email}
+            onChangeText={setEmail}
+            onSubmitEditing={sendMagicLink}
+            returnKeyType="go"
+          />
 
-        <TouchableOpacity style={styles.btnGoogle} onPress={() => continueWith('google')} activeOpacity={0.85}>
-          <Text style={styles.btnGoogleText}>G  Continue with Google</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.btnContinue, (!email.trim() || loading) && styles.btnDisabled]}
+            onPress={sendMagicLink}
+            activeOpacity={0.85}
+            disabled={!email.trim() || loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={C.white} />
+            ) : (
+              <Text style={styles.btnContinueText}>Continue with Email →</Text>
+            )}
+          </TouchableOpacity>
 
-        <Text style={styles.legal}>
-          By continuing, you agree to{'\n'}
-          BeepRun's <Text style={styles.legalLink}>Terms of Service</Text> and <Text style={styles.legalLink}>Privacy Policy</Text>.
-        </Text>
-      </View>
-    </SafeAreaView>
+          <TouchableOpacity onPress={() => router.push('/onboarding/permission')} hitSlop={8}>
+            <Text style={styles.skipLink}>Skip for now</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.legal}>
+            By continuing, you agree to{'\n'}
+            BeepRun's <Text style={styles.legalLink}>Terms of Service</Text> and{' '}
+            <Text style={styles.legalLink}>Privacy Policy</Text>.
+          </Text>
+        </View>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -69,32 +148,36 @@ const styles = StyleSheet.create({
   buttons: {
     gap: 12,
   },
-  btnApple: {
-    height: 52,
-    backgroundColor: C.onSurface,
-    borderRadius: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnAppleText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: C.white,
-    letterSpacing: 0.2,
-  },
-  btnGoogle: {
+  input: {
     height: 52,
     backgroundColor: C.white,
-    borderRadius: 2,
     borderWidth: 0.5,
     borderColor: C.outlineVariant,
+    borderRadius: 2,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: C.onSurface,
+  },
+  btnContinue: {
+    height: 52,
+    backgroundColor: C.brandRed,
+    borderRadius: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  btnGoogleText: {
+  btnDisabled: {
+    opacity: 0.4,
+  },
+  btnContinueText: {
     fontSize: 15,
-    fontWeight: '600',
-    color: C.onSurface,
+    fontWeight: '700',
+    color: C.white,
+    letterSpacing: 0.3,
+  },
+  skipLink: {
+    fontSize: 13,
+    color: C.secondary,
+    textAlign: 'center',
     letterSpacing: 0.2,
   },
   legal: {
@@ -102,9 +185,35 @@ const styles = StyleSheet.create({
     color: C.secondary,
     textAlign: 'center',
     lineHeight: 18,
-    marginTop: 8,
+    marginTop: 4,
   },
   legalLink: {
     color: C.brandRed,
+  },
+  sentBox: {
+    padding: 20,
+    borderWidth: 0.5,
+    borderColor: C.outlineVariant,
+    borderRadius: 2,
+    backgroundColor: C.white,
+    alignItems: 'center',
+    gap: 8,
+  },
+  sentTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: C.onSurface,
+  },
+  sentSub: {
+    fontSize: 14,
+    color: C.secondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  resendLink: {
+    fontSize: 13,
+    color: C.brandRed,
+    fontWeight: '600',
+    marginTop: 4,
   },
 });
