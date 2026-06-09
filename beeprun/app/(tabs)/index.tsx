@@ -218,22 +218,50 @@ function BottomNav() {
   );
 }
 
+function EmptyFeed({ name }: { name: string }) {
+  return (
+    <View style={styles.emptyCard}>
+      <View style={styles.emptyAvatarRow}>
+        <View style={styles.emptyAvatar} />
+        <View>
+          <Text style={styles.emptyName}>{name}</Text>
+          <Text style={styles.emptyTime}>NOW</Text>
+        </View>
+      </View>
+      <View style={styles.emptyScoreBlock}>
+        <Text style={styles.emptyScoreDash}>—</Text>
+        <Text style={styles.emptyScoreLabel}>Run your first test to appear here.</Text>
+      </View>
+      <View style={styles.emptyArrowRow}>
+        <Text style={styles.emptyArrowText}>Tap RECORD to start</Text>
+        <Text style={styles.emptyArrow}>↓</Text>
+      </View>
+    </View>
+  );
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
+  const showEmpty = ACTIVITIES.length === 0;
+
   return (
     <SafeAreaView style={styles.container}>
       <Header />
       <View style={styles.hairline} />
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
         <StoryRow />
-        {ACTIVITIES.map((item, index) => (
-          <ActivityCard
-            key={item.id}
-            item={item}
-            isLast={index === ACTIVITIES.length - 1}
-          />
-        ))}
+        {showEmpty ? (
+          <EmptyFeed name="Jake" />
+        ) : (
+          ACTIVITIES.map((item, index) => (
+            <ActivityCard
+              key={item.id}
+              item={item}
+              isLast={index === ACTIVITIES.length - 1}
+            />
+          ))
+        )}
       </ScrollView>
       <BottomNav />
     </SafeAreaView>
@@ -484,5 +512,72 @@ const styles = StyleSheet.create({
   navRecordIcon: {
     fontSize: 18,
     color: C.white,
+  },
+
+  // Empty feed
+  emptyCard: {
+    margin: 20,
+    padding: 20,
+    borderWidth: 0.5,
+    borderColor: C.outlineVariant,
+    borderRadius: 2,
+    backgroundColor: C.surfaceContainerLow,
+    gap: 16,
+  },
+  emptyAvatarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  emptyAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: C.surfaceContainerHighest,
+  },
+  emptyName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: C.onSurface,
+  },
+  emptyTime: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: C.secondary,
+    letterSpacing: 0.5,
+  },
+  emptyScoreBlock: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderTopWidth: 0.5,
+    borderBottomWidth: 0.5,
+    borderColor: C.outlineVariant,
+    gap: 8,
+  },
+  emptyScoreDash: {
+    fontSize: 64,
+    fontWeight: '700',
+    color: C.surfaceContainerHighest,
+    letterSpacing: -2,
+    lineHeight: 64,
+  },
+  emptyScoreLabel: {
+    fontSize: 13,
+    color: C.secondary,
+    textAlign: 'center',
+  },
+  emptyArrowRow: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  emptyArrowText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: C.brandRed,
+    letterSpacing: 0.3,
+  },
+  emptyArrow: {
+    fontSize: 24,
+    color: C.brandRed,
   },
 });

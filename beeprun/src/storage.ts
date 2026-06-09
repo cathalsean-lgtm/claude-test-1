@@ -34,3 +34,41 @@ export async function loadResults(): Promise<TestResult[]> {
 export async function clearResults(): Promise<void> {
   await AsyncStorage.removeItem(KEY);
 }
+
+// ─── User Profile ─────────────────────────────────────────────────────────────
+
+const PROFILE_KEY = 'beeprun_profile';
+const ONBOARDING_KEY = 'beeprun_onboarding_done';
+
+export type UserProfile = {
+  firstName: string;
+  age: number;
+  city: string;
+  baselinePB?: { level: number; shuttle: number; score: string } | null;
+};
+
+export async function saveProfile(profile: UserProfile): Promise<void> {
+  await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+}
+
+export async function loadProfile(): Promise<UserProfile | null> {
+  try {
+    const raw = await AsyncStorage.getItem(PROFILE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function isOnboardingDone(): Promise<boolean> {
+  try {
+    const val = await AsyncStorage.getItem(ONBOARDING_KEY);
+    return val === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export async function markOnboardingDone(): Promise<void> {
+  await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+}
