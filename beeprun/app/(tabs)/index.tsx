@@ -135,7 +135,19 @@ function StoryRow() {
   );
 }
 
-function ActivityCard({ item, isLast }: { item: typeof ACTIVITIES[0]; isLast: boolean }) {
+function ActivityCard({
+  item,
+  isLast,
+  liked,
+  likeCount,
+  onLike,
+}: {
+  item: FeedItem;
+  isLast: boolean;
+  liked: boolean;
+  likeCount: number;
+  onLike: () => void;
+}) {
   const scoreColor = item.isPB ? C.brandRed : C.onSurface;
 
   return (
@@ -165,9 +177,11 @@ function ActivityCard({ item, isLast }: { item: typeof ACTIVITIES[0]; isLast: bo
 
         {/* Actions */}
         <View style={styles.cardActions}>
-          <TouchableOpacity style={styles.actionBtn} hitSlop={8}>
-            <Text style={styles.actionIcon}>♡</Text>
-            <Text style={styles.actionCount}>{item.likes}</Text>
+          <TouchableOpacity style={styles.actionBtn} hitSlop={8} onPress={onLike}>
+            <Text style={[styles.actionIcon, liked && { color: C.brandRed }]}>
+              {liked ? '♥' : '♡'}
+            </Text>
+            <Text style={[styles.actionCount, liked && { color: C.brandRed }]}>{likeCount}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn} hitSlop={8}>
             <Text style={styles.actionIcon}>💬</Text>
@@ -234,6 +248,9 @@ function EmptyFeed({ name }: { name: string }) {
 
 export default function HomeScreen() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const currentUserId = useRef<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -241,15 +258,14 @@ export default function HomeScreen() {
       const fetchFeed = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+        currentUserId.current = user.id;
 
-        // Get IDs of people this user follows
         const { data: follows } = await supabase
           .from('follows')
           .select('following_id')
           .eq('follower_id', user.id);
 
         const followingIds = (follows ?? []).map((f: { following_id: string }) => f.following_id);
-        // Include own results in feed
         const ids = [...followingIds, user.id];
 
         const { data: rows } = await supabase
@@ -261,7 +277,20 @@ export default function HomeScreen() {
 
         if (!rows || !active) return;
 
-        // Find each user's PB score for is_pb badge
+        const resultIds = rows.map((r: any) => r.id);
+
+        // Fetch like counts and user's own likes in parallel
+        const [{ data: likesData }, { data: myLikes }] = await Promise.all([
+          supabase.from('likes').select('result_id').in('result_id', resultIds),
+          supabase.from('likes').select('result_id').eq('user_id', user.id).in('result_id', resultIds),
+        ]);
+
+        const counts: Record<string, number> = {};
+        (likesData ?? []).forEach((l: { result_id: string }) => {
+          counts[l.result_id] = (counts[l.result_id] ?? 0) + 1;
+        });
+        const myLikedSet = new Set((myLikes ?? []).map((l: { result_id: string }) => l.result_id));
+
         const pbByUser: Record<string, number> = {};
         rows.forEach((r: any) => {
           const s = parseFloat(r.score);
@@ -275,17 +304,44 @@ export default function HomeScreen() {
           score: r.score,
           level: `LEVEL ${r.level}, SHUTTLE ${r.shuttle}`,
           vo2: `VO2 MAX: ${Number(r.vo2_max).toFixed(1)}`,
-          likes: 0,
+          likes: counts[r.id] ?? 0,
           comments: 0,
           isPB: parseFloat(r.score) >= pbByUser[r.user_id],
         }));
 
-        if (active) setFeed(items);
+        if (active) {
+          setFeed(items);
+          setLikeCounts(counts);
+          setLikedIds(myLikedSet);
+        }
       };
       fetchFeed();
       return () => { active = false; };
     }, [])
   );
+
+  const toggleLike = useCallback(async (resultId: string) => {
+    const uid = currentUserId.current;
+    if (!uid) return;
+    const isLiked = likedIds.has(resultId);
+
+    // Optimistic update
+    setLikedIds(prev => {
+      const next = new Set(prev);
+      isLiked ? next.delete(resultId) : next.add(resultId);
+      return next;
+    });
+    setLikeCounts(prev => ({
+      ...prev,
+      [resultId]: Math.max(0, (prev[resultId] ?? 0) + (isLiked ? -1 : 1)),
+    }));
+
+    if (isLiked) {
+      await supabase.from('likes').delete().eq('user_id', uid).eq('result_id', resultId);
+    } else {
+      await supabase.from('likes').insert({ user_id: uid, result_id: resultId });
+    }
+  }, [likedIds]);
 
   const showEmpty = feed.length === 0;
 
@@ -303,6 +359,9 @@ export default function HomeScreen() {
               key={item.id}
               item={item}
               isLast={index === feed.length - 1}
+              liked={likedIds.has(item.id)}
+              likeCount={likeCounts[item.id] ?? item.likes}
+              onLike={() => toggleLike(item.id)}
             />
           ))
         )}

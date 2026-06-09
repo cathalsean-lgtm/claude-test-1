@@ -15,6 +15,23 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 export type { User, Session } from '@supabase/supabase-js';
 
+export async function syncProfileToSupabase(profile: {
+  firstName: string;
+  age: number;
+  city: string;
+  baselinePB?: { level: number; shuttle: number; score: string } | null;
+}): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from('profiles').upsert({
+    id: user.id,
+    first_name: profile.firstName,
+    age: profile.age,
+    city: profile.city,
+    baseline_pb: profile.baselinePB ?? null,
+  });
+}
+
 export async function syncResultToSupabase(result: {
   level: number;
   shuttle: number;

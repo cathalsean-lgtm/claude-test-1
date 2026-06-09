@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { loadProfile, saveProfile, markOnboardingDone } from '../../src/storage';
+import { syncProfileToSupabase } from '../../src/supabase';
 
 const C = {
   surface: '#f9f9f9',
@@ -33,6 +34,8 @@ export default function PBScreen() {
       });
     }
     await markOnboardingDone();
+    const finalProfile = await loadProfile();
+    if (finalProfile) syncProfileToSupabase(finalProfile).catch(() => {});
     router.replace('/(tabs)');
   };
 
