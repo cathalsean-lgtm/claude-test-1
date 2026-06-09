@@ -27,7 +27,14 @@
     },
     "plugins": [
       "expo-router",
-      "expo-av"
+      "expo-av",
+      "expo-apple-authentication",
+      [
+        "expo-notifications",
+        {
+          "iosDisplayInForeground": true
+        }
+      ]
     ]
   }
 }

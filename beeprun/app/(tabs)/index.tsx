@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Animated,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, router } from 'expo-router';
 import { supabase } from '../../src/supabase';
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
@@ -38,6 +38,7 @@ const STORIES = [
 
 type FeedItem = {
   id: string;
+  userId: string;
   name: string;
   timeAgo: string;
   score: string;
@@ -155,7 +156,9 @@ function ActivityCard({
       <View style={styles.card}>
         {/* Header row */}
         <View style={styles.cardHeader}>
-          <View style={styles.cardAvatar} />
+          <TouchableOpacity onPress={() => router.push(`/profile/${item.userId}`)} hitSlop={8}>
+            <View style={styles.cardAvatar} />
+          </TouchableOpacity>
           <View style={styles.cardMeta}>
             <Text style={styles.cardName}>{item.name}</Text>
             <Text style={styles.cardTime}>{item.timeAgo}</Text>
@@ -299,6 +302,7 @@ export default function HomeScreen() {
 
         const items: FeedItem[] = rows.map((r: any) => ({
           id: r.id,
+          userId: r.user_id,
           name: r.profiles?.first_name ?? 'Unknown',
           timeAgo: timeAgoLabel(r.recorded_at),
           score: r.score,
