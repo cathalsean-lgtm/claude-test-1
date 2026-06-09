@@ -7,10 +7,12 @@ import {
   SafeAreaView,
   Platform,
   Animated,
+  Share,
 } from 'react-native';
 import { Audio } from 'expo-av';
 import Svg, { Circle } from 'react-native-svg';
-import { saveResult } from '../../src/storage';
+import { captureRef } from 'react-native-view-shot';
+import { saveResult, loadProfile } from '../../src/storage';
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 
@@ -94,6 +96,14 @@ export default function RecordScreen() {
   const levelRef = useRef(0);
   const shuttleRef = useRef(0);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const shareCardRef = useRef<View>(null);
+  const [userHandle, setUserHandle] = useState('@beeprun');
+
+  useEffect(() => {
+    loadProfile().then(p => {
+      if (p?.firstName) setUserHandle(`@${p.firstName.toLowerCase().replace(/\s+/g, '')}`);
+    }).catch(() => {});
+  }, []);
 
   // Animated value for SVG stroke dash offset
   const dashOffsetAnim = useRef(new Animated.Value(SVG_CIRCUMFERENCE)).current;
@@ -219,6 +229,19 @@ export default function RecordScreen() {
       }
     }, interval);
   }, [playBeep, flashBackground, dashOffsetAnim]);
+
+  const handleShare = useCallback(async () => {
+    if (!shareCardRef.current) return;
+    try {
+      const uri = await captureRef(shareCardRef, {
+        format: 'png',
+        quality: 1,
+        width: 1080,
+        height: 1080,
+      });
+      await Share.share({ url: uri, message: `BeepRun score: ${scoreLabel(level, shuttle)} — VO2 Max ${estimateVO2Max(level, shuttle)}` });
+    } catch {}
+  }, [level, shuttle]);
 
   const startCountdown = () => {
     setPhase('countdown');
@@ -517,7 +540,37 @@ export default function RecordScreen() {
         </View>
       </View>
 
+      {/* Hidden share card — captured off-screen */}
+      <View style={styles.shareCardOffscreen}>
+        <View ref={shareCardRef} style={styles.shareCard} collapsable={false}>
+          <View style={styles.shareCardCornerTL} />
+          <View style={styles.shareCardCornerTR} />
+          <Text style={styles.shareCardScore}>{score}</Text>
+          <Text style={styles.shareCardLevelLabel}>LEVEL · SHUTTLE</Text>
+          <View style={styles.shareCardStats}>
+            <View style={styles.shareCardStatItem}>
+              <Text style={styles.shareCardStatLabel}>VO2 MAX</Text>
+              <Text style={styles.shareCardStatValue}>{finalVO2}</Text>
+            </View>
+            <View style={styles.shareCardStatDivider} />
+            <View style={styles.shareCardStatItem}>
+              <Text style={styles.shareCardStatLabel}>TOTAL SHUTTLES</Text>
+              <Text style={styles.shareCardStatValue}>
+                {SHUTTLES_PER_LEVEL.slice(0, level).reduce((a, b) => a + b, 0) + shuttle + 1}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.shareCardBottom}>
+            <Text style={styles.shareCardWordmark}>BeepRun</Text>
+            <Text style={styles.shareCardHandle}>{userHandle}</Text>
+          </View>
+        </View>
+      </View>
+
       <View style={styles.footer}>
+        <TouchableOpacity style={styles.shareBtn} onPress={handleShare} activeOpacity={0.85}>
+          <Text style={styles.shareBtnText}>↑  Share Result Card</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.newTestBtn} onPress={reset} activeOpacity={0.85}>
           <Text style={styles.newTestBtnText}>NEW TEST</Text>
         </TouchableOpacity>
@@ -823,6 +876,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
     paddingTop: 8,
+    gap: 0,
   },
   cancelBtn: {
     backgroundColor: C.surfaceContainerLow,
@@ -885,5 +939,123 @@ const styles = StyleSheet.create({
   navRecordIcon: {
     fontSize: 18,
     color: C.white,
+  },
+
+  // Share button
+  shareBtn: {
+    backgroundColor: C.surfaceContainerLow,
+    borderWidth: 0.5,
+    borderColor: C.outlineVariant,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  shareBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: C.onSurface,
+    letterSpacing: 0.3,
+  },
+
+  // Hidden share card (captured off-screen)
+  shareCardOffscreen: {
+    position: 'absolute',
+    left: -9999,
+    top: 0,
+  },
+  shareCard: {
+    width: 1080,
+    height: 1080,
+    backgroundColor: C.brandRed,
+    padding: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  shareCardCornerTL: {
+    position: 'absolute',
+    top: 48,
+    left: 48,
+    width: 32,
+    height: 32,
+    borderTopWidth: 3,
+    borderLeftWidth: 3,
+    borderColor: 'rgba(255,255,255,0.4)',
+  },
+  shareCardCornerTR: {
+    position: 'absolute',
+    top: 48,
+    right: 48,
+    width: 32,
+    height: 32,
+    borderTopWidth: 3,
+    borderRightWidth: 3,
+    borderColor: 'rgba(255,255,255,0.4)',
+  },
+  shareCardScore: {
+    fontSize: 220,
+    fontWeight: '700',
+    color: C.white,
+    letterSpacing: -8,
+    lineHeight: 220,
+    textAlign: 'center',
+  },
+  shareCardLevelLabel: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.6)',
+    letterSpacing: 4,
+    marginTop: 8,
+    textTransform: 'uppercase',
+  },
+  shareCardStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 56,
+    gap: 0,
+  },
+  shareCardStatItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 8,
+  },
+  shareCardStatDivider: {
+    width: 1,
+    height: 56,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  shareCardStatLabel: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.6)',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  shareCardStatValue: {
+    fontSize: 52,
+    fontWeight: '700',
+    color: C.white,
+    letterSpacing: -1,
+    lineHeight: 56,
+  },
+  shareCardBottom: {
+    position: 'absolute',
+    bottom: 80,
+    left: 80,
+    right: 80,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  shareCardWordmark: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: C.white,
+    letterSpacing: -0.5,
+  },
+  shareCardHandle: {
+    fontSize: 28,
+    fontWeight: '400',
+    color: 'rgba(255,255,255,0.6)',
+    letterSpacing: 0.3,
   },
 });
