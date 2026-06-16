@@ -49,7 +49,7 @@ def main():
     extra_cols = ["match_1","score_1","match_2","score_2","match_3","score_3"]
 
     rows_out = []
-    stats = {"high":0, "corrected":0, "fuzzy_matched":0, "needs_review":0, "unchanged":0}
+    stats = {"high":0, "corrected":0, "fuzzy_matched":0, "fuzzy_low":0, "no_match":0}
 
     with open(QUOTES_PATH, newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
@@ -65,7 +65,7 @@ def main():
             if conf == "uncertain":
                 k = make_key(row)
                 m = matches.get(k)
-                if m:
+                if m and m.get("match_1","").strip():
                     score = int(m.get("score_1") or 0)
                     out["match_1"] = m.get("match_1","")
                     out["score_1"] = m.get("score_1","")
@@ -73,16 +73,17 @@ def main():
                     out["score_2"] = m.get("score_2","")
                     out["match_3"] = m.get("match_3","")
                     out["score_3"] = m.get("score_3","")
+                    # Always update Venue with best candidate
+                    out["Venue"] = m["match_1"]
                     if score >= THRESHOLD:
-                        out["Venue"] = m["match_1"]
                         out["MatchConfidence"] = "fuzzy_matched"
                         stats["fuzzy_matched"] += 1
                     else:
-                        out["MatchConfidence"] = "needs_review"
-                        stats["needs_review"] += 1
+                        out["MatchConfidence"] = "fuzzy_low"
+                        stats["fuzzy_low"] += 1
                 else:
-                    out["MatchConfidence"] = "needs_review"
-                    stats["needs_review"] += 1
+                    out["MatchConfidence"] = "no_match"
+                    stats["no_match"] += 1
             else:
                 stats[conf] = stats.get(conf, 0) + 1
 
@@ -99,11 +100,12 @@ def main():
     print(f"Total rows         : {total:>5}")
     print(f"  high             : {stats.get('high',0):>5}")
     print(f"  corrected        : {stats.get('corrected',0):>5}")
-    print(f"  fuzzy_matched    : {stats.get('fuzzy_matched',0):>5}  (≥{THRESHOLD} score, Venue updated)")
-    print(f"  needs_review     : {stats.get('needs_review',0):>5}  (<{THRESHOLD} score, needs human)")
-    resolved = stats.get('high',0) + stats.get('corrected',0) + stats.get('fuzzy_matched',0)
-    print(f"\n  Fully resolved   : {resolved:>5} / {total}  ({resolved/total*100:.1f}%)")
-    print(f"  Still unresolved : {stats.get('needs_review',0):>5} / {total}  ({stats.get('needs_review',0)/total*100:.1f}%)")
+    print(f"  fuzzy_matched    : {stats.get('fuzzy_matched',0):>5}  (≥{THRESHOLD} score, high confidence)")
+    print(f"  fuzzy_low        : {stats.get('fuzzy_low',0):>5}  (<{THRESHOLD} score, best guess applied — verify)")
+    print(f"  no_match         : {stats.get('no_match',0):>5}  (no candidate found, city not in DB)")
+    resolved = stats.get('high',0) + stats.get('corrected',0) + stats.get('fuzzy_matched',0) + stats.get('fuzzy_low',0)
+    print(f"\n  Venue field populated : {resolved:>5} / {total}  ({resolved/total*100:.1f}%)")
+    print(f"  No venue found        : {stats.get('no_match',0):>5} / {total}")
 
 
 if __name__ == "__main__":
