@@ -81,10 +81,13 @@ def build_queries(row):
 def composite(query, candidate):
     if not query:
         return 0
-    ts = fuzz.token_set_ratio(query, candidate)
+    # token_set_ratio strips shared generic words (e.g. "coffee roasters") then
+    # compares only remainders — this causes false positives when venues share
+    # category words. Use partial_ratio + WRatio instead: partial_ratio correctly
+    # rewards the raw name being a substring of the full official venue name.
     pr = fuzz.partial_ratio(query, candidate)
     wr = fuzz.WRatio(query, candidate)
-    return round(ts * 0.4 + pr * 0.3 + wr * 0.3)
+    return round(pr * 0.55 + wr * 0.45)
 
 
 def score_candidate(raw, full_query, candidate):
